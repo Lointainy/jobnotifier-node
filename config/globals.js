@@ -4,7 +4,7 @@ module.exports = {
 	monitorJobsInterval: null,
 	filters: [],
 	jobsListLength: 1,
-	timeInterval: 50, // seconds
+	timeInterval: 60, // seconds
 	category: ['it'],
 	activeCategory: '',
 	activeFilterOption: []
