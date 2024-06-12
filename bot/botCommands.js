@@ -1,6 +1,8 @@
 const globals = require('../config/globals');
 const monitorJobs = require('../services/jobMonitor');
 
+let awaitingFilters = false;
+
 const registerCommands = (bot) => {
 	bot.onText(/\/start/, (msg) => {
 		globals.chatID = msg.chat.id;
@@ -15,11 +17,21 @@ const registerCommands = (bot) => {
 		clearInterval(globals.monitorJobsInterval);
 	});
 
-	bot.onText(/\/filters (.+)/, (msg, match) => {
+	bot.onText(/\/filters/, (msg) => {
 		const { id: chatId } = msg.chat;
-		globals.filters = match[1].split(',');
-		console.log(`FILTERS: ${globals.filters}`);
-		bot.sendMessage(chatId, `Фільтри встановлено на ${globals.filters.join(', ')}`);
+		awaitingFilters = true;
+		bot.sendMessage(chatId, 'Будь ласка, введіть фільтри через кому:\n приклад: javascipt,react');
+	});
+
+	bot.on('message', (msg) => {
+		const { id: chatId } = msg.chat;
+
+		if (awaitingFilters && msg.text !== '/filters') {
+			globals.filters = msg.text.split(',').map((filter) => filter.trim());
+			awaitingFilters = false;
+			console.log(`FILTERS: ${globals.filters}`);
+			bot.sendMessage(chatId, `Фільтри встановлено на ${globals.filters.join(', ')}`);
+		}
 	});
 
 	bot.onText(/\/count/, (msg) => {
@@ -88,3 +100,4 @@ const registerCommands = (bot) => {
 };
 
 module.exports = registerCommands;
+
