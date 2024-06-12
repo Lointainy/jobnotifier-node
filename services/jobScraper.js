@@ -1,4 +1,3 @@
-// services/jobScraper.js
 const axios = require('axios');
 const cheerio = require('cheerio');
 
@@ -16,7 +15,7 @@ const checkJobs = async (category, filters, filterOption, jobsListLength) => {
 			.slice(0, jobsListLength)
 			.each((i, e) => {
 				const title = $(e).find('h2 a').text().trim();
-				const url = `https://www.work.ua/${$(e).find('h2 a').attr('href')}`;
+				const url = `https://www.work.ua${$(e).find('h2 a').attr('href')}`;
 				const desc = $(e).find('p').text().trim();
 				jobs.push({ title, url, desc });
 			});
@@ -29,3 +28,4 @@ const checkJobs = async (category, filters, filterOption, jobsListLength) => {
 };
 
 module.exports = checkJobs;
+
