@@ -79,3 +79,58 @@ bot.onText(/\/filters (.+)/, (msg, match) => {
 	console.log(`FILTERS: ${filters}`);
 	bot.sendMessage(chatId, `Фільтри встановлено на ${filters.join(', ')}`);
 });
+
+bot.onText(/\/count/, (msg) => {
+	const { id: chatId } = msg.chat;
+
+	const count = {
+		reply_markup: {
+			inline_keyboard: [
+				[{ text: '1', callback_data: JSON.stringify({ count: 1 }) }],
+				[{ text: '3', callback_data: JSON.stringify({ count: 3 }) }],
+				[{ text: '5', callback_data: JSON.stringify({ count: 5 }) }],
+				[{ text: '10', callback_data: JSON.stringify({ count: 10 }) }]
+			]
+		}
+	};
+
+	bot.sendMessage(chatId, 'Кількість нових вакансій:', count);
+});
+
+bot.onText(/\/interval/, (msg) => {
+	const { id: chatId } = msg.chat;
+
+	const interval = {
+		reply_markup: {
+			inline_keyboard: [
+				[{ text: '5 хвилин', callback_data: JSON.stringify({ interval: 1 * 10 }) }],
+				[{ text: '15 хвилин', callback_data: JSON.stringify({ interval: 15 * 60 }) }],
+				[{ text: '30 хвилин', callback_data: JSON.stringify({ interval: 30 * 60 }) }],
+				[{ text: '1 годину', callback_data: JSON.stringify({ interval: 60 * 60 }) }]
+			]
+		}
+	};
+
+	bot.sendMessage(chatId, 'Отримувати повідомлення о вакансіях, раз на:', interval);
+});
+
+bot.on('callback_query', (callbackQuery) => {
+	const chatId = callbackQuery.message.chat.id;
+	const { interval, count } = JSON.parse(callbackQuery.data);
+	if (interval) {
+		timeInterval = interval;
+		console.log(`INTERVAL: ${timeInterval}`);
+		bot.sendMessage(chatId, `Інтервал отримання встановлено: ${interval / 60} хвилин`);
+
+		if (monitorJobsInterval) {
+			clearInterval(monitorJobsInterval);
+		}
+
+		monitorJobsInterval = setInterval(monitorJobs, timeInterval * 1000);
+	}
+	if (count) {
+		jobsListLength = count;
+		console.log(`JOBS COUNT: ${jobsListLength}`);
+		bot.sendMessage(chatId, `Кількість отримання нових вакансій ${count}`);
+	}
+});
