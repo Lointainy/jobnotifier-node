@@ -45,7 +45,7 @@ const registerCommands = (bot) => {
 		const interval = {
 			reply_markup: {
 				inline_keyboard: [
-					[{ text: '5 хвилин', callback_data: JSON.stringify({ interval: 1 * 10 }) }],
+					[{ text: '5 хвилин', callback_data: JSON.stringify({ interval: 5 * 60 }) }],
 					[{ text: '15 хвилин', callback_data: JSON.stringify({ interval: 15 * 60 }) }],
 					[{ text: '30 хвилин', callback_data: JSON.stringify({ interval: 30 * 60 }) }],
 					[{ text: '1 годину', callback_data: JSON.stringify({ interval: 60 * 60 }) }]
@@ -54,6 +54,21 @@ const registerCommands = (bot) => {
 		};
 
 		bot.sendMessage(chatId, 'Отримувати повідомлення о вакансіях, раз на:', interval);
+	});
+
+	bot.onText(/\/category/, (msg) => {
+		const { id: chatId } = msg.chat;
+
+		const category = {
+			reply_markup: {
+				inline_keyboard: [
+					[{ text: 'IT', callback_data: JSON.stringify({ category: 'it' }) }],
+					[{ text: 'Дизайн', callback_data: JSON.stringify({ category: 'design-art' }) }]
+				]
+			}
+		};
+
+		bot.sendMessage(chatId, 'Отримувати повідомлення о вакансіях, раз на:', category);
 	});
 };
 
