@@ -4,7 +4,7 @@ const monitorJobs = require('../services/jobMonitor');
 const registerCallbacks = (bot) => {
 	bot.on('callback_query', (callbackQuery) => {
 		const chatId = callbackQuery.message.chat.id;
-		const { interval, count, category } = JSON.parse(callbackQuery.data);
+		const { interval, count, category, filterOption } = JSON.parse(callbackQuery.data);
 
 		if (interval) {
 			globals.timeInterval = interval;
@@ -25,6 +25,20 @@ const registerCallbacks = (bot) => {
 			bot.sendMessage(chatId, `Нова категорія - ${category}`);
 			updateInterval(bot);
 		}
+
+		if (filterOption) {
+			if (!globals.activeFilterOption.includes(filterOption)) {
+				globals.activeFilterOption.push(filterOption);
+			} else {
+				const index = globals.activeFilterOption.indexOf(filterOption);
+				if (index > -1) {
+					globals.activeFilterOption.splice(index, 1);
+				}
+			}
+
+			console.log(`FILTER OPTIONS: ${globals.activeFilterOption}`);
+			bot.sendMessage(chatId, `Обрані фільтри: ${globals.activeFilterOption.join(', ')}`);
+		}
 	});
 };
 
@@ -35,4 +49,3 @@ function updateInterval(bot) {
 }
 
 module.exports = registerCallbacks;
-

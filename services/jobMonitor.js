@@ -6,6 +6,7 @@ const monitorJobs = async (bot) => {
 	const jobs = await checkJobs(
 		globals.activeCategory == '' ? globals.category[0] : globals.activeCategory,
 		globals.filters,
+		globals.activeFilterOption,
 		globals.jobsListLength
 	);
 
@@ -17,4 +18,3 @@ const monitorJobs = async (bot) => {
 };
 
 module.exports = monitorJobs;
-

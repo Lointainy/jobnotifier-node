@@ -70,7 +70,21 @@ const registerCommands = (bot) => {
 
 		bot.sendMessage(chatId, 'Отримувати повідомлення о вакансіях, раз на:', category);
 	});
+
+	bot.onText(/\/options/, (msg) => {
+		const { id: chatId } = msg.chat;
+
+		const filterOptions = {
+			reply_markup: {
+				inline_keyboard: [
+					[{ text: 'Будь-яке з слів', callback_data: JSON.stringify({ filterOption: 'anyword' }) }],
+					[{ text: 'Не тільки загаловки', callback_data: JSON.stringify({ filterOption: 'notitle' }) }]
+				]
+			}
+		};
+
+		bot.sendMessage(chatId, 'Виберіть фільтри:', filterOptions);
+	});
 };
 
 module.exports = registerCommands;
-

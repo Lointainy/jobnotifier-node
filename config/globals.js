@@ -5,6 +5,6 @@ module.exports = {
 	jobsListLength: 1,
 	timeInterval: 60, // seconds
 	category: ['it'],
-	activeCategory: ''
+	activeCategory: '',
+	activeFilterOption: []
 };
-

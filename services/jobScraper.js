@@ -2,9 +2,10 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-const checkJobs = async (category, filters, jobsListLength) => {
+const checkJobs = async (category, filters, filterOption, jobsListLength) => {
 	try {
-		const url = `https://www.work.ua/jobs-${category}-${filters.join('+')}/?advs=1&anyword=1&notitle=1`;
+		const option = filterOption.map((param) => `${param}=1`).join('&');
+		const url = `https://www.work.ua/jobs-${category}-${filters.join('+')}/?advs=1&${option}`;
 		console.log(`URL: ${url}`);
 
 		const { data } = await axios.get(url);
@@ -28,4 +29,3 @@ const checkJobs = async (category, filters, jobsListLength) => {
 };
 
 module.exports = checkJobs;
-
