@@ -10,11 +10,16 @@ const monitorJobs = async (bot) => {
 		globals.jobsListLength
 	);
 
-	if (jobs.length > 0) {
-		for (const job of jobs) {
+	const newJobs = jobs.filter((job) => !globals.jobsList.some((oldJob) => oldJob.url === job.url));
+
+	if (newJobs.length > 0) {
+		for (const job of newJobs) {
 			await sendJobNotification(bot, globals.chatID, job);
 		}
+
+		globals.jobsList = [...newJobs, ...globals.jobsList].slice(0, globals.jobsListLength);
 	}
 };
 
 module.exports = monitorJobs;
+
