@@ -15,6 +15,7 @@ const registerCommands = (bot) => {
 		bot.sendMessage(msg.chat.id, 'Бот вимкнено!');
 		console.log('Bot is STOP');
 		clearInterval(globals.monitorJobsInterval);
+		globals.monitorJobsInterval = null;
 	});
 
 	bot.onText(/\/filters/, (msg) => {
