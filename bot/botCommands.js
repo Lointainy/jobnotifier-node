@@ -1,104 +1,187 @@
 const globals = require('../config/globals');
+const { getUser } = require('../data/user');
 const monitorJobs = require('../services/jobMonitor');
+const { createUser, updateUser } = require('../services/user');
 
-let awaitingFilters = false;
+let awaitingUserFilters = new Map();
+
+const isAuthenticated = async (bot, msg, next) => {
+	const chatId = msg.chat.id.toString();
+
+	const existingUser = await getUser({ chatId });
+
+	if (!existingUser) {
+		bot.sendMessage(Number(chatId), `Сталась помилка!\nБудь ласка введіть /start`);
+		return null;
+	}
+
+	next();
+};
 
 const registerCommands = (bot) => {
-	bot.onText(/\/start/, (msg) => {
-		globals.chatID = msg.chat.id;
-		bot.sendMessage(globals.chatID, 'Бот запущено!');
+	const withAuth = (handler) => async (msg) => {
+		await isAuthenticated(bot, msg, () => handler(msg));
+	};
+
+	bot.onText(/\/start/, async (msg) => {
+		const chatId = msg.chat.id.toString();
+
+		const existingUser = await getUser({ chatId });
+
+		if (!existingUser) {
+			await createUser(chatId);
+		}
+
+		let userMonitorJobsInterval = globals.userIntervals.get(chatId);
+
+		if (!userMonitorJobsInterval) {
+			const intervalTime = existingUser ? existingUser.timeInterval : globals.defaultValue.timeInterval;
+			userMonitorJobsInterval = setInterval(() => monitorJobs(bot, chatId), intervalTime * 1000);
+
+			globals.userIntervals.set(chatId, userMonitorJobsInterval);
+
+			await updateUser(chatId, { monitorJobsInterval: intervalTime });
+		}
+
 		console.log('Bot is RUN');
-		globals.monitorJobsInterval = setInterval(() => monitorJobs(bot), globals.timeInterval * 1000);
+
+		bot.sendMessage(Number(chatId), 'Бот увімкнено!');
 	});
 
-	bot.onText(/\/stop/, (msg) => {
-		bot.sendMessage(msg.chat.id, 'Бот вимкнено!');
-		console.log('Bot is STOP');
-		clearInterval(globals.monitorJobsInterval);
-		globals.monitorJobsInterval = null;
-	});
+	bot.onText(
+		/\/stop/,
+		withAuth(async (msg) => {
+			const chatId = msg.chat.id.toString();
 
-	bot.onText(/\/filters/, (msg) => {
-		const { id: chatId } = msg.chat;
-		awaitingFilters = true;
-		bot.sendMessage(chatId, 'Будь ласка, введіть фільтри через кому:\n приклад: javascipt,react');
-	});
+			const userMonitorJobsInterval = globals.userIntervals.get(chatId);
 
-	bot.on('message', (msg) => {
-		const { id: chatId } = msg.chat;
+			if (userMonitorJobsInterval) {
+				clearInterval(userMonitorJobsInterval);
+				globals.userIntervals.delete(chatId);
+
+				await updateUser(chatId, { monitorJobsInterval: null });
+
+				console.log(`Bot is stopped for user ${chatId}`);
+
+				bot.sendMessage(Number(chatId), 'Бот вимкнено!');
+			} else {
+				console.log(`Bot is not running for user ${chatId}`);
+				bot.sendMessage(Number(chatId), 'Бот не був запущений.');
+			}
+		})
+	);
+
+	bot.onText(
+		/\/filters/,
+		withAuth(async (msg) => {
+			const chatId = msg.chat.id.toString();
+
+			awaitingUserFilters.set(chatId, true);
+
+			bot.sendMessage(Number(chatId), 'Будь ласка, введіть фільтри через кому:\n приклад: javascipt,react');
+		})
+	);
+
+	bot.on('message', async (msg) => {
+		const chatId = msg.chat.id.toString();
+
+		const awaitingFilters = awaitingUserFilters.get(chatId);
 
 		if (awaitingFilters && msg.text !== '/filters') {
-			globals.filters = msg.text.split(',').map((filter) => filter.trim());
-			awaitingFilters = false;
-			console.log(`FILTERS: ${globals.filters}`);
-			bot.sendMessage(chatId, `Фільтри встановлено на ${globals.filters.join(', ')}`);
+			const filters = msg.text.split(',').map((filter) => filter.trim());
+			await updateUser(chatId, { filters });
+			console.log(`FILTERS: ${filters}`);
+			bot.sendMessage(Number(chatId), `Фільтри встановлено на ${filters.join(', ')}`);
 		}
 	});
 
-	bot.onText(/\/count/, (msg) => {
-		const { id: chatId } = msg.chat;
+	bot.onText(
+		/\/count/,
+		withAuth((msg) => {
+			const { id: chatId } = msg.chat;
 
-		const count = {
-			reply_markup: {
-				inline_keyboard: [
-					[{ text: '1', callback_data: JSON.stringify({ count: 1 }) }],
-					[{ text: '3', callback_data: JSON.stringify({ count: 3 }) }],
-					[{ text: '5', callback_data: JSON.stringify({ count: 5 }) }],
-					[{ text: '10', callback_data: JSON.stringify({ count: 10 }) }]
-				]
-			}
-		};
+			let inlineKeyboardButton = globals.defaultValue.jobsListLength.map((count) => [
+				{
+					text: count.toString(),
+					callback_data: JSON.stringify({ count: count })
+				}
+			]);
 
-		bot.sendMessage(chatId, 'Кількість нових вакансій:', count);
-	});
+			const count = {
+				reply_markup: {
+					inline_keyboard: inlineKeyboardButton
+				}
+			};
 
-	bot.onText(/\/interval/, (msg) => {
-		const { id: chatId } = msg.chat;
+			bot.sendMessage(chatId, 'Кількість нових вакансій:', count);
+		})
+	);
 
-		const interval = {
-			reply_markup: {
-				inline_keyboard: [
-					[{ text: '5 хвилин', callback_data: JSON.stringify({ interval: 5 * 60 }) }],
-					[{ text: '15 хвилин', callback_data: JSON.stringify({ interval: 15 * 60 }) }],
-					[{ text: '30 хвилин', callback_data: JSON.stringify({ interval: 30 * 60 }) }],
-					[{ text: '1 годину', callback_data: JSON.stringify({ interval: 60 * 60 }) }]
-				]
-			}
-		};
+	bot.onText(
+		/\/interval/,
+		withAuth((msg) => {
+			const { id: chatId } = msg.chat;
 
-		bot.sendMessage(chatId, 'Отримувати повідомлення о вакансіях, раз на:', interval);
-	});
+			let inlineKeyboardButton = globals.defaultValue.msgInterval.map((number) => [
+				{
+					text: `${number} хвилин`,
+					callback_data: JSON.stringify({ interval: number * 60 })
+				}
+			]);
 
-	bot.onText(/\/category/, (msg) => {
-		const { id: chatId } = msg.chat;
+			const interval = {
+				reply_markup: {
+					inline_keyboard: inlineKeyboardButton
+				}
+			};
 
-		const category = {
-			reply_markup: {
-				inline_keyboard: [
-					[{ text: 'IT', callback_data: JSON.stringify({ category: 'it' }) }],
-					[{ text: 'Дизайн', callback_data: JSON.stringify({ category: 'design-art' }) }]
-				]
-			}
-		};
+			bot.sendMessage(chatId, 'Отримувати повідомлення о вакансіях, раз на:', interval);
+		})
+	);
 
-		bot.sendMessage(chatId, 'Отримувати повідомлення о вакансіях, раз на:', category);
-	});
+	bot.onText(
+		/\/category/,
+		withAuth((msg) => {
+			const { id: chatId } = msg.chat;
 
-	bot.onText(/\/options/, (msg) => {
-		const { id: chatId } = msg.chat;
+			let inlineKeyboardButton = globals.defaultValue.category.map((i) => [
+				{
+					text: i.title,
+					callback_data: JSON.stringify({ category: i.tag })
+				}
+			]);
 
-		const filterOptions = {
-			reply_markup: {
-				inline_keyboard: [
-					[{ text: 'Будь-яке з слів', callback_data: JSON.stringify({ filterOption: 'anyword' }) }],
-					[{ text: 'Не тільки загаловки', callback_data: JSON.stringify({ filterOption: 'notitle' }) }]
-				]
-			}
-		};
+			const category = {
+				reply_markup: {
+					inline_keyboard: inlineKeyboardButton
+				}
+			};
 
-		bot.sendMessage(chatId, 'Виберіть фільтри:', filterOptions);
-	});
+			bot.sendMessage(chatId, 'Отримувати повідомлення о вакансіях, раз на:', category);
+		})
+	);
+
+	bot.onText(
+		/\/options/,
+		withAuth((msg) => {
+			const { id: chatId } = msg.chat;
+
+			let inlineKeyboardButton = globals.defaultValue.filterOption.map((i) => [
+				{
+					text: i.title,
+					callback_data: JSON.stringify({ filterOption: i.tag })
+				}
+			]);
+
+			const filterOptions = {
+				reply_markup: {
+					inline_keyboard: inlineKeyboardButton
+				}
+			};
+
+			bot.sendMessage(chatId, 'Виберіть фільтри:', filterOptions);
+		})
+	);
 };
 
 module.exports = registerCommands;
-
