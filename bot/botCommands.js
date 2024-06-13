@@ -88,8 +88,13 @@ const registerCommands = (bot) => {
 
 		if (awaitingFilters && msg.text !== '/filters') {
 			const filters = msg.text.split(',').map((filter) => filter.trim());
+
 			await updateUser(chatId, { filters });
+
+			awaitingUserFilters.delete(chatId);
+
 			console.log(`FILTERS: ${filters}`);
+
 			bot.sendMessage(Number(chatId), `Фільтри встановлено на ${filters.join(', ')}`);
 		}
 	});
