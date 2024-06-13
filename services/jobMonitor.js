@@ -16,9 +16,8 @@ const monitorJobs = async (bot, chatId) => {
 	);
 
 	const userJobs = await getJobs(user.id);
-	console.log(userJobs.length);
+
 	const newJobs = jobs.filter((job) => !userJobs.some((oldJob) => oldJob.url === job.url));
-	console.log(newJobs.length);
 
 	if (newJobs.length > 0) {
 		for (const job of newJobs) {
