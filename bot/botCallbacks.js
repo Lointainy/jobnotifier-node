@@ -1,6 +1,7 @@
 const globals = require('../config/globals');
 const { getUser } = require('../data/user');
 const { updateUser } = require('../services/user');
+const { resetInterval } = require('../utils/interval');
 
 const registerCallbacks = (bot) => {
 	bot.on('callback_query', async (callbackQuery) => {
@@ -9,6 +10,9 @@ const registerCallbacks = (bot) => {
 
 		if (interval) {
 			await updateUser(chatId.toString(), { timeInterval: interval });
+
+			resetInterval(bot, chatId.toString(), interval);
+
 			console.log(`INTERVAL: ${interval}`);
 			bot.sendMessage(chatId, `Інтервал отримання встановлено - ${interval / 60} хвилин`);
 		}

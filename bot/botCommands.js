@@ -2,6 +2,7 @@ const globals = require('../config/globals');
 const { getUser } = require('../data/user');
 const monitorJobs = require('../services/jobMonitor');
 const { createUser, updateUser } = require('../services/user');
+const { stopInterval, runInterval } = require('../utils/interval');
 
 let awaitingUserFilters = new Map();
 
@@ -36,14 +37,13 @@ const registerCommands = (bot) => {
 
 		if (!userMonitorJobsInterval) {
 			const intervalTime = existingUser ? existingUser.timeInterval : globals.defaultValue.timeInterval;
-			userMonitorJobsInterval = setInterval(() => monitorJobs(bot, chatId), intervalTime * 1000);
 
-			globals.userIntervals.set(chatId, userMonitorJobsInterval);
+			runInterval(bot, chatId, intervalTime);
 
 			await updateUser(chatId, { monitorJobsInterval: intervalTime });
 		}
 
-		console.log('Bot is RUN');
+		console.log(`Bot is RUN for user ${chatId}`);
 
 		bot.sendMessage(Number(chatId), 'Бот увімкнено!');
 	});
@@ -56,8 +56,7 @@ const registerCommands = (bot) => {
 			const userMonitorJobsInterval = globals.userIntervals.get(chatId);
 
 			if (userMonitorJobsInterval) {
-				clearInterval(userMonitorJobsInterval);
-				globals.userIntervals.delete(chatId);
+				stopInterval(userMonitorJobsInterval, chatId);
 
 				await updateUser(chatId, { monitorJobsInterval: null });
 
