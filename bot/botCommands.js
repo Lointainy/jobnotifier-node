@@ -1,7 +1,6 @@
 const globals = require('../config/globals');
-const { getUser } = require('../data/user');
+const { getUser, createUser, updateUser } = require('../data/user');
 const monitorJobs = require('../services/jobMonitor');
-const { createUser, updateUser } = require('../services/user');
 const { stopInterval, runInterval } = require('../utils/interval');
 
 let awaitingUserFilters = new Map();

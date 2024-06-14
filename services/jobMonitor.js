@@ -1,9 +1,8 @@
 const checkJobs = require('./jobScraper');
 const sendJobNotification = require('./jobNotifier');
 const globals = require('../config/globals');
-const { getUser } = require('../data/user');
-const { updateUser } = require('./user');
-const { getJobs, createJob, deleteJob } = require('./job');
+const { getUser, updateUser } = require('../data/user');
+const { getJobs, createJob, deleteJob } = require('../data/job');
 
 const monitorJobs = async (bot, chatId) => {
 	const user = await getUser({ chatId });

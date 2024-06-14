@@ -1,6 +1,5 @@
 const globals = require('../config/globals');
-const { getUser } = require('../data/user');
-const { updateUser } = require('../services/user');
+const { getUser, updateUser } = require('../data/user');
 const { resetInterval } = require('../utils/interval');
 
 const registerCallbacks = (bot) => {
