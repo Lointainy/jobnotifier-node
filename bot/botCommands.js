@@ -100,15 +100,22 @@ const registerCommands = (bot) => {
 
 	bot.onText(
 		/\/count/,
-		withAuth((msg) => {
+		withAuth(async (msg) => {
 			const { id: chatId } = msg.chat;
 
-			let inlineKeyboardButton = globals.defaultValue.jobsListLength.map((count) => [
-				{
-					text: count.toString(),
-					callback_data: JSON.stringify({ count: count })
-				}
-			]);
+			const { numberJobs } = await getUser({ chatId: chatId.toString() });
+
+			let inlineKeyboardButton = globals.defaultValue.jobsListLength.map((i) => {
+				const isActive = i === Number(numberJobs);
+				const text = isActive ? `✅ ${i}` : i;
+
+				return [
+					{
+						text,
+						callback_data: JSON.stringify({ count: i })
+					}
+				];
+			});
 
 			const count = {
 				reply_markup: {
@@ -122,15 +129,22 @@ const registerCommands = (bot) => {
 
 	bot.onText(
 		/\/interval/,
-		withAuth((msg) => {
+		withAuth(async (msg) => {
 			const { id: chatId } = msg.chat;
 
-			let inlineKeyboardButton = globals.defaultValue.msgInterval.map((number) => [
-				{
-					text: `${number} хвилин`,
-					callback_data: JSON.stringify({ interval: number * 60 })
-				}
-			]);
+			const { timeInterval } = await getUser({ chatId: chatId.toString() });
+
+			let inlineKeyboardButton = globals.defaultValue.msgInterval.map((i) => {
+				const isActive = i === timeInterval / 60;
+				const text = isActive ? `✅ ${i} хв.` : i;
+
+				return [
+					{
+						text,
+						callback_data: JSON.stringify({ interval: i * 60 })
+					}
+				];
+			});
 
 			const interval = {
 				reply_markup: {
@@ -144,15 +158,22 @@ const registerCommands = (bot) => {
 
 	bot.onText(
 		/\/category/,
-		withAuth((msg) => {
+		withAuth(async (msg) => {
 			const { id: chatId } = msg.chat;
 
-			let inlineKeyboardButton = globals.defaultValue.category.map((i) => [
-				{
-					text: i.title,
-					callback_data: JSON.stringify({ category: i.tag })
-				}
-			]);
+			const { activeCategory } = await getUser({ chatId: chatId.toString() });
+
+			let inlineKeyboardButton = globals.defaultValue.category.map((i) => {
+				const isActive = i.tag === activeCategory;
+				const text = isActive ? `✅ ${i.title}` : i.title;
+
+				return [
+					{
+						text,
+						callback_data: JSON.stringify({ category: i.tag })
+					}
+				];
+			});
 
 			const category = {
 				reply_markup: {
@@ -166,15 +187,22 @@ const registerCommands = (bot) => {
 
 	bot.onText(
 		/\/options/,
-		withAuth((msg) => {
+		withAuth(async (msg) => {
 			const { id: chatId } = msg.chat;
 
-			let inlineKeyboardButton = globals.defaultValue.filterOption.map((i) => [
-				{
-					text: i.title,
-					callback_data: JSON.stringify({ filterOption: i.tag })
-				}
-			]);
+			const { activeFilterOption } = await getUser({ chatId: chatId.toString() });
+
+			let inlineKeyboardButton = globals.defaultValue.filterOption.map((i) => {
+				const isActive = activeFilterOption.includes(i.tag);
+				const text = isActive ? `✅ ${i.title}` : i.title;
+
+				return [
+					{
+						text,
+						callback_data: JSON.stringify({ filterOption: i.tag })
+					}
+				];
+			});
 
 			const filterOptions = {
 				reply_markup: {
