@@ -74,9 +74,15 @@ const registerCommands = (bot) => {
 		withAuth(async (msg) => {
 			const chatId = msg.chat.id.toString();
 
+			const { filters: oldFilters } = await getUser({ chatId });
+
 			awaitingUserFilters.set(chatId, true);
 
-			bot.sendMessage(Number(chatId), 'Будь ласка, введіть фільтри через кому:\n приклад: javascipt,react');
+			bot.sendMessage(
+				Number(chatId),
+				`Старі фільтри: ${oldFilters.join(', ')}. \n\n Будь ласка, введіть фільтри через кому:\n приклад: javascipt,react
+				\n\n Якщо не плануєте змінювати фільтри то напишість 'no'`
+			);
 		})
 	);
 
@@ -85,7 +91,11 @@ const registerCommands = (bot) => {
 
 		const awaitingFilters = awaitingUserFilters.get(chatId);
 
-		if (awaitingFilters && msg.text !== '/filters') {
+		if (msg.text.toLowerCase() === 'no') {
+			awaitingUserFilters.delete(chatId);
+		}
+
+		if (awaitingFilters && msg.text !== '/filters' && msg.text.toLowerCase() !== 'no') {
 			const filters = msg.text.split(',').map((filter) => filter.trim());
 
 			await updateUser(chatId, { filters });
